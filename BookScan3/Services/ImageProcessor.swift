@@ -44,9 +44,9 @@ struct AutoCaptureGate {
     private var armed = true
     private var lastCapture: TimeInterval = -10
     mutating func reset() { self = AutoCaptureGate() }
-    mutating func update(_ quad: Quad?, sharpness: Double, time: TimeInterval) -> Bool {
+    mutating func update(_ quad: Quad?, sharpness: Double, time: TimeInterval, additionalMotion: CGFloat = 0) -> Bool {
         guard let quad else { previous = nil; stableSince = nil; armed = true; return false }
-        let motion = previous.map { quad.distance(to: $0) } ?? 1
+        let motion = max(additionalMotion, previous.map { quad.distance(to: $0) } ?? 1)
         previous = quad
         if motion > 0.035 { armed = true }
         guard armed, quad.area > 0.15, sharpness > 0.003, motion < 0.009 else { stableSince = nil; return false }
@@ -77,38 +77,29 @@ enum ImageProcessor {
     }
 
     static func process(_ data: Data, split: Bool, spine: Double?, curvature: Double = 0) throws -> [Data] {
-        try autoreleasepool {
+        if split {
+            guard let image = CIImage(data: data, options: [.applyOrientationProperty: true]) else { throw ScanError.message("이미지를 읽을 수 없습니다.") }
+            let detection = try BookSpreadDetector.detect(image, manualSpine: spine)
+            guard detection.canAutoSave else { throw ScanError.message("양쪽 페이지의 경계를 먼저 확인해 주세요.") }
+            return try processSpread(data, geometry: detection.geometry, curvature: curvature)
+        }
+        return try autoreleasepool {
             guard var image = CIImage(data: data, options: [.applyOrientationProperty: true]) else { throw ScanError.message("이미지를 읽을 수 없습니다.") }
             if let quad = try detect(image) { image = correct(image, quad: quad) }
             image = image.transformed(by: CGAffineTransform(translationX: -image.extent.minX, y: -image.extent.minY))
-            guard split else { return [try jpeg(image)] }
-            let ratio = min(0.75, max(0.25, spine ?? estimateSpine(image)))
-            let x = (image.extent.width * ratio).rounded()
-            let left = CGRect(x: 0, y: 0, width: x, height: image.extent.height)
-            let right = CGRect(x: x, y: 0, width: image.extent.width - x, height: image.extent.height)
-            return try [left, right].enumerated().map { index, rect in
-                try jpeg(CylindricalDewarpService.dewarp(image.cropped(to: rect), strength: curvature, bindingOnLeft: index == 1))
-            }
+            return [try jpeg(image)]
         }
     }
 
-    static func estimateSpine(_ image: CIImage) -> Double {
-        let size = CGSize(width: 160, height: 120)
-        let small = image.transformed(by: CGAffineTransform(scaleX: size.width / image.extent.width, y: size.height / image.extent.height))
-        var pixels = [UInt8](repeating: 0, count: 160 * 120 * 4)
-        context.render(small, toBitmap: &pixels, rowBytes: 160 * 4, bounds: CGRect(origin: .zero, size: size), format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB())
-        var best = 80, minimum = Double.greatestFiniteMagnitude
-        for x in 48..<112 {
-            var total = 0.0
-            for y in 12..<108 {
-                let i = (y * 160 + x) * 4
-                total += Double(pixels[i]) * 0.299 + Double(pixels[i + 1]) * 0.587 + Double(pixels[i + 2]) * 0.114
+    static func processSpread(_ data: Data, geometry: SpreadGeometry, curvature: Double = 0) throws -> [Data] {
+        guard geometry.isValid else { throw ScanError.message("좌우 경계가 겹치거나 뒤집혀 있어요. 여섯 점을 다시 맞춰 주세요.") }
+        guard let image = CIImage(data: data, options: [.applyOrientationProperty: true]) else { throw ScanError.message("촬영 원본을 읽을 수 없습니다.") }
+        return try [geometry.left, geometry.right].enumerated().map { index, quad in
+            try autoreleasepool {
+                let corrected = correct(image, quad: quad)
+                return try jpeg(CylindricalDewarpService.dewarp(corrected, strength: curvature, bindingOnLeft: index == 1))
             }
-            // Weak center prior prevents ordinary dark text near the edges from winning.
-            let score = total / 96 + Double(abs(x - 80)) * 0.35
-            if score < minimum { minimum = score; best = x }
         }
-        return Double(best) / 160
     }
 
     static func render(_ data: Data, filter: ScanFilter) throws -> Data {

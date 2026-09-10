@@ -19,6 +19,7 @@ struct PageDetailView: View {
     @StateObject private var speech = SpeechService()
     @State private var textMode = false
     @State private var scale: CGFloat = 1
+    @State private var review: CaptureRecord?
     @GestureState private var magnification: CGFloat = 1
     let bookID: UUID
     let pageID: UUID
@@ -39,6 +40,12 @@ struct PageDetailView: View {
                     }
                     if library.busy { ProgressView(library.progress.isEmpty ? "처리 중…" : library.progress).padding() }
                     HStack {
+                        if let captureID = page.captureID {
+                            Button { Task {
+                                do { review = try await library.storage.capture(captureID) }
+                                catch { library.error = error.localizedDescription }
+                            } } label: { Image(systemName: "crop.rotate") }.accessibilityLabel("원본에서 경계 다시 조정")
+                        }
                         Menu { ForEach(ScanFilter.allCases) { filter in Button(filter.title) { Task { await library.apply(filter: filter, pageID: pageID, bookID: bookID) } } } } label: { Label(page.filter.title, systemImage: "camera.filters") }
                         Spacer()
                         Button("텍스트 인식", systemImage: "text.viewfinder") { Task { await library.recognize(bookID: bookID, pageID: pageID); textMode = true } }
@@ -54,6 +61,7 @@ struct PageDetailView: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("완료") { dismiss() } } }
             }
         }.onDisappear { speech.stop() }
+            .sheet(item: $review) { record in SpreadReviewView(record: record).environmentObject(library) }
             .alert("처리하지 못했습니다", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) { Button("확인") { library.error = nil } } message: { Text(library.error ?? "") }
     }
 }

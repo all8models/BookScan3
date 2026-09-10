@@ -16,6 +16,8 @@ struct BookDetailView: View {
     @State private var title = ""
     @State private var deleting: ScanPage?
     @State private var dragged: UUID?
+    @State private var review: CaptureRecord?
+    @State private var discarding: CaptureRecord?
     var book: Book? { library.books.first { $0.id == bookID } }
     var body: some View {
         Group {
@@ -36,6 +38,14 @@ struct BookDetailView: View {
                             PhotosPicker(selection: $photos, maxSelectionCount: 50, matching: .images) { Label("사진 가져오기", systemImage: "photo.on.rectangle") }.buttonStyle(.bordered)
                         }.controlSize(.large).disabled(library.busy)
                         if library.busy { HStack { ProgressView(); Text(library.progress.isEmpty ? "저장 중…" : library.progress).font(.subheadline) } }
+                        ForEach(library.drafts.filter { $0.bookID == bookID }) { draft in
+                            HStack {
+                                Label("경계 확인이 필요한 촬영", systemImage: "viewfinder")
+                                Spacer()
+                                Button("계속 편집") { review = draft }.accessibilityIdentifier("resumeSpread")
+                                Button("삭제", role: .destructive) { discarding = draft }
+                            }.padding().background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12)).disabled(library.busy)
+                        }
                         Divider()
                         HStack { Text("페이지").font(.title3.bold()); Spacer(); Text("길게 눌러 순서를 바꾸세요").font(.caption).foregroundStyle(.secondary) }
                         if book.pages.isEmpty {
@@ -83,6 +93,11 @@ struct BookDetailView: View {
         .sheet(item: $selectedPage) { page in PageDetailView(bookID: bookID, pageID: page.id).environmentObject(library) }
         .sheet(item: $shared) { item in ShareSheet(items: [item.url]) }
         .sheet(item: $transfer) { item in PCTransferView(url: item.url) }
+        .sheet(item: $review) { record in SpreadReviewView(record: record).environmentObject(library) }
+        .alert("보관 중인 촬영 원본을 삭제할까요?", isPresented: Binding(get: { discarding != nil }, set: { if !$0 { discarding = nil } })) {
+            Button("취소", role: .cancel) { discarding = nil }
+            Button("삭제", role: .destructive) { if let record = discarding { Task { await library.discardDraft(record) } }; discarding = nil }
+        }
         .alert("책 제목", isPresented: $renaming) {
             TextField("제목", text: $title)
             Button("취소", role: .cancel) { }

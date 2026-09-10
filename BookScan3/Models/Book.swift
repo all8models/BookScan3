@@ -8,6 +8,9 @@ struct ScanPage: Identifiable, Codable, Equatable, Sendable {
     var text: String = ""
     var filter: ScanFilter = .original
     var createdAt = Date()
+    // Optional fields keep libraries written by version 1 decodable.
+    var captureID: UUID?
+    var captureSide: Int?
 }
 
 struct Book: Identifiable, Codable, Equatable, Sendable {

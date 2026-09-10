@@ -27,6 +27,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bookscan.BookScan3
+        DEVELOPMENT_TEAM: B9SZKSZ334
         MARKETING_VERSION: '1.0.0'
         CURRENT_PROJECT_VERSION: '1'
   BookScan3Tests:

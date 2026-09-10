@@ -2,6 +2,32 @@ import XCTest
 
 final class BookScan3UITests: XCTestCase {
     @MainActor
+    func testReviewDraftAdjustSaveAndReopenOriginal() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--uitesting", "--spread-fixture"]
+        app.launchEnvironment["BOOKSCAN_TEST_ID"] = UUID().uuidString
+        app.launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let resume = app.buttons["resumeSpread"].firstMatch
+        XCTAssertTrue(resume.waitForExistence(timeout: 20))
+        resume.tap()
+        let save = app.buttons["saveSpread"]
+        XCTAssertTrue(save.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.otherElements["spreadCanvas"].exists)
+        // Nudge a selected corner to exercise the accessible editor and real re-render.
+        app.buttons["선택한 점 오른쪽 이동"].tap()
+        save.tap()
+        XCTAssertTrue(app.buttons["startScan"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["02"].waitForExistence(timeout: 5))
+        app.staticTexts["01"].tap()
+        let recrop = app.buttons["원본에서 경계 다시 조정"]
+        XCTAssertTrue(recrop.waitForExistence(timeout: 5))
+        recrop.tap()
+        XCTAssertTrue(save.waitForExistence(timeout: 5))
+        app.buttons["나중에"].tap()
+    }
+
+    @MainActor
     func testCreateBookAndOpenScanner() {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting"]

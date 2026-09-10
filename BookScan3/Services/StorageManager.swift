@@ -59,10 +59,45 @@ actor StorageManager {
 
     func data(for page: ScanPage) throws -> Data { try Data(contentsOf: root.appending(path: page.imageName)) }
 
+    func createCapture(data: Data, bookID: UUID, filter: ScanFilter, curvature: Double) throws -> CaptureRecord {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        var record = CaptureRecord(bookID: bookID, sourceName: "", filter: filter, curvature: curvature)
+        // Retain the exact input bytes, including EXIF orientation and HEIC/JPEG format.
+        record.sourceName = "\(record.id.uuidString).source"
+        try data.write(to: root.appending(path: record.sourceName), options: [.atomic, .completeFileProtectionUnlessOpen])
+        do { try saveCapture(record) }
+        catch { try? FileManager.default.removeItem(at: root.appending(path: record.sourceName)); throw error }
+        return record
+    }
+    func saveCapture(_ record: CaptureRecord) throws {
+        try JSONEncoder().encode(record).write(to: root.appending(path: "\(record.id.uuidString).capture.json"), options: [.atomic, .completeFileProtectionUnlessOpen])
+    }
+    func capture(_ id: UUID) throws -> CaptureRecord {
+        try JSONDecoder().decode(CaptureRecord.self, from: Data(contentsOf: root.appending(path: "\(id.uuidString).capture.json")))
+    }
+    func source(_ record: CaptureRecord) throws -> Data { try Data(contentsOf: root.appending(path: record.sourceName)) }
+    func captures() throws -> [CaptureRecord] {
+        guard FileManager.default.fileExists(atPath: root.path) else { return [] }
+        return try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasSuffix(".capture.json") }
+            .map { try JSONDecoder().decode(CaptureRecord.self, from: Data(contentsOf: $0)) }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+    func deleteCapture(_ record: CaptureRecord) throws {
+        let metadata = root.appending(path: "\(record.id.uuidString).capture.json")
+        try FileManager.default.removeItem(at: metadata)
+        try FileManager.default.removeItem(at: root.appending(path: record.sourceName))
+    }
+
     func removeUnused(_ books: [Book]) throws {
         let names = Set(books.flatMap(\.pages).flatMap { [$0.imageName, $0.originalName, $0.thumbnailName] })
         for url in try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) where url.pathExtension == "jpg" && !names.contains(url.lastPathComponent) {
             try FileManager.default.removeItem(at: url)
+        }
+        let references = Set(books.flatMap(\.pages).compactMap(\.captureID))
+        let bookIDs = Set(books.map(\.id))
+        for record in try captures() where !references.contains(record.id) && (!record.isPending || !bookIDs.contains(record.bookID)) {
+            try deleteCapture(record)
         }
     }
 

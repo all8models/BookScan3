@@ -10,10 +10,16 @@ final class CameraService: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     private var lastAnalysis: Double = 0
     private var smoother = KalmanQuadFilter()
     private var gate = AutoCaptureGate()
+    private var spreadMode = true
+    private var previousSpread: SpreadGeometry?
     private var configured = false
     private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
     private var rotationObservation: NSKeyValueObservation?
-    var onDetection: (@Sendable (Quad?, Bool, CGFloat, CGFloat) -> Void)?
+    var onDetection: (@Sendable (Quad?, Bool, CGFloat, CGFloat, SpreadDetection?) -> Void)?
+
+    func setSpreadMode(_ enabled: Bool) {
+        analysisQueue.async { self.spreadMode = enabled; self.previousSpread = nil; self.gate.reset(); self.smoother.reset() }
+    }
 
     func start() async throws {
         let permission = AVCaptureDevice.authorizationStatus(for: .video)
@@ -63,7 +69,7 @@ final class CameraService: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             if self.session.isRunning { self.session.stopRunning() }
             if let pending = self.continuation { self.continuation = nil; pending.resume(throwing: CancellationError()) }
         }
-        analysisQueue.async { self.gate.reset(); self.smoother.reset() }
+        analysisQueue.async { self.gate.reset(); self.smoother.reset(); self.previousSpread = nil }
     }
     func capture() async throws -> Data {
         try await withCheckedThrowingContinuation { continuation in
@@ -99,11 +105,15 @@ final class CameraService: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             let image = CIImage(cvPixelBuffer: buffer)
             let scale = min(1, 720 / max(image.extent.width, image.extent.height))
             let small = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-            let raw = try? ImageProcessor.detect(small)
+            let spread = spreadMode ? try? BookSpreadDetector.detect(small) : nil
+            let raw: Quad? = spreadMode ? ((spread?.confidence ?? 0) > 0 ? spread?.geometry.outer : nil) : try? ImageProcessor.detect(small)
             let quad = raw.map { smoother.update($0) }
             if quad == nil { smoother.reset() }
-            let ready = gate.update(raw, sharpness: Self.sharpness(buffer), time: time)
-            onDetection?(quad, ready, image.extent.width / image.extent.height, connection.videoRotationAngle)
+            let motion = spread.flatMap { value in previousSpread.map { value.geometry.distance(to: $0) } } ?? 1
+            previousSpread = spread?.geometry
+            let accepted = spreadMode ? (spread?.canAutoSave == true ? raw : nil) : raw
+            let ready = gate.update(accepted, sharpness: Self.sharpness(buffer), time: time, additionalMotion: spreadMode ? motion : 0)
+            onDetection?(quad, ready, image.extent.width / image.extent.height, connection.videoRotationAngle, spread)
         }
     }
     private static func sharpness(_ buffer: CVPixelBuffer) -> Double {

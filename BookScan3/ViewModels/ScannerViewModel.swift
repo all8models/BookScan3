@@ -4,6 +4,9 @@ import SwiftUI
 final class ScannerViewModel: ObservableObject {
     let camera = CameraService()
     @Published var quad: Quad?
+    @Published var spread: SpreadDetection?
+    @Published var reviewing = false
+    @Published var reviewEveryCapture = false
     @Published var aspect: CGFloat = 0.75
     @Published var rotation: CGFloat = 90
     @Published var ready = false
@@ -16,16 +19,19 @@ final class ScannerViewModel: ObservableObject {
     @Published var curvature = 0.4
     @Published var filter: ScanFilter = .original
     @Published var error: String?
-    var onCapture: ((Data) async -> Void)?
+    var onCapture: ((Data, SpreadCaptureHint?) async -> Void)?
+    private var observedAt = Date.distantPast
     private var active = false
 
     init() {
-        camera.onDetection = { [weak self] quad, trigger, aspect, rotation in
+        camera.onDetection = { [weak self] quad, trigger, aspect, rotation, spread in
             Task { @MainActor in
                 guard let self, self.active else { return }
                 self.quad = quad
+                self.spread = spread
+                self.observedAt = Date()
                 self.aspect = aspect; self.rotation = rotation
-                if trigger, self.automatic, !self.capturing { await self.capture() }
+                if trigger, self.automatic, !self.capturing, !self.reviewing { await self.capture() }
             }
         }
     }
@@ -38,9 +44,10 @@ final class ScannerViewModel: ObservableObject {
     }
     func stop() { active = false; ready = false; camera.stop() }
     func capture() async {
-        guard active, ready, !capturing else { return }
+        guard active, ready, !capturing, !reviewing else { return }
         capturing = true; defer { capturing = false }
-        do { let data = try await camera.capture(); await onCapture?(data) }
+        let hint = spread.flatMap { $0.canAutoSave ? SpreadCaptureHint(geometry: $0.geometry, aspect: aspect, observedAt: observedAt) : nil }
+        do { let data = try await camera.capture(); await onCapture?(data, hint) }
         catch is CancellationError { }
         catch { self.error = error.localizedDescription }
     }

@@ -8,6 +8,7 @@ struct CameraScannerView: View {
     @Environment(\.scenePhase) private var phase
     @StateObject private var scanner = ScannerViewModel()
     @State private var photo: PhotosPickerItem?
+    @State private var review: CaptureRecord?
     let bookID: UUID
     var body: some View {
         NavigationStack {
@@ -24,10 +25,14 @@ struct CameraScannerView: View {
                 ToolbarItem(placement: .primaryAction) { Text("\(library.books.first { $0.id == bookID }?.pages.count ?? 0)페이지 저장됨").font(.subheadline.monospacedDigit()) }
             }
             .task {
-                scanner.onCapture = { data in await save(data) }
+                scanner.onCapture = { data, hint in await save(data, hint: hint) }
                 await scanner.start()
             }
             .onDisappear { scanner.stop() }
+            .sheet(item: $review, onDismiss: { scanner.reviewing = false }) { record in
+                SpreadReviewView(record: record).environmentObject(library)
+            }
+            .onChange(of: scanner.split) { _, value in scanner.camera.setSpreadMode(value); scanner.spread = nil; scanner.quad = nil }
             .onChange(of: phase) { _, phase in if phase == .active { Task { await scanner.start() } } else { scanner.stop() } }
             .onChange(of: photo) { _, item in
                 guard let item else { return }
@@ -45,7 +50,7 @@ struct CameraScannerView: View {
     }
     private var preview: some View {
         ZStack {
-            CameraPreview(session: scanner.camera.session, quad: scanner.quad, aspect: scanner.aspect, rotation: scanner.rotation)
+            CameraPreview(session: scanner.camera.session, quad: scanner.quad, aspect: scanner.aspect, rotation: scanner.rotation, spread: scanner.split ? scanner.spread : nil)
             if !scanner.ready {
                 VStack(spacing: 16) {
                     Image(systemName: "camera.viewfinder").font(.system(size: 56, weight: .ultraLight))
@@ -54,7 +59,7 @@ struct CameraScannerView: View {
                 }.foregroundStyle(.white).padding(28)
             }
             VStack {
-                Label(scanner.quad == nil ? "책 전체가 보이도록 맞춰 주세요" : "문서를 찾았어요 · 잠시 고정해 주세요", systemImage: scanner.quad == nil ? "viewfinder" : "checkmark.viewfinder")
+                Label(scanner.split ? (scanner.spread?.canAutoSave == true ? "양쪽 페이지를 찾았어요 · 잠시 고정해 주세요" : "양쪽 페이지가 모두 보이도록 맞춰 주세요") : (scanner.quad == nil ? "문서 전체가 보이도록 맞춰 주세요" : "문서를 찾았어요 · 잠시 고정해 주세요"), systemImage: "viewfinder")
                     .font(.subheadline).padding(12).background(.ultraThinMaterial, in: Capsule()).padding(.top, 22)
                 Spacer()
                 if scanner.capturing || library.busy { ProgressView(library.progress.isEmpty ? "촬영 중…" : library.progress).padding(18).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14)).padding(.bottom, 22) }
@@ -67,6 +72,7 @@ struct CameraScannerView: View {
                 VStack(alignment: .leading, spacing: 6) { Text("좋은 스캔의 시작").font(.title2.weight(.semibold)); Text("책을 평평하게 펼치고\n빛이 고르게 닿도록 해 주세요.").font(.subheadline).foregroundStyle(.secondary) }
                 Picker("페이지 모드", selection: $scanner.split) { Text("한 페이지").tag(false); Text("펼친 책").tag(true) }.pickerStyle(.segmented)
                 if scanner.split {
+                    Toggle("촬영마다 경계 확인", isOn: $scanner.reviewEveryCapture)
                     Toggle("접힘선 자동 찾기", isOn: $scanner.automaticSpine)
                     if !scanner.automaticSpine {
                         Slider(value: $scanner.spine, in: 0.25...0.75).accessibilityLabel("왼쪽 페이지 비율")
@@ -89,8 +95,11 @@ struct CameraScannerView: View {
             }.padding(24).disabled(scanner.capturing || library.busy)
         }.background(Theme.paper)
     }
-    private func save(_ data: Data) async {
-        await library.add(data: data, to: bookID, split: scanner.split, spine: scanner.automaticSpine ? nil : scanner.spine, filter: scanner.filter, curvature: scanner.dewarp ? scanner.curvature : 0)
+    private func save(_ data: Data, hint: SpreadCaptureHint? = nil) async {
+        if let record = await library.add(data: data, to: bookID, split: scanner.split, spine: scanner.automaticSpine ? nil : scanner.spine, filter: scanner.filter, curvature: scanner.dewarp ? scanner.curvature : 0, forceReview: scanner.reviewEveryCapture, hint: hint) {
+            scanner.reviewing = true
+            review = record
+        }
     }
 }
 
@@ -99,10 +108,11 @@ private struct CameraPreview: UIViewRepresentable {
     let quad: Quad?
     let aspect: CGFloat
     let rotation: CGFloat
+    let spread: SpreadDetection?
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView(); view.preview.session = session; return view
     }
-    func updateUIView(_ uiView: PreviewView, context: Context) { uiView.quad = quad; uiView.aspect = aspect; uiView.rotation = rotation; uiView.setNeedsLayout() }
+    func updateUIView(_ uiView: PreviewView, context: Context) { uiView.quad = quad; uiView.aspect = aspect; uiView.rotation = rotation; uiView.spread = spread; uiView.setNeedsLayout() }
 }
 
 private final class PreviewView: UIView {
@@ -111,6 +121,7 @@ private final class PreviewView: UIView {
     var quad: Quad?
     var aspect: CGFloat = 0.75
     var rotation: CGFloat = 90
+    var spread: SpreadDetection?
     override init(frame: CGRect) {
         super.init(frame: frame)
         preview.videoGravity = .resizeAspect
@@ -129,6 +140,12 @@ private final class PreviewView: UIView {
         let rect = AVMakeRect(aspectRatio: CGSize(width: aspect, height: 1), insideRect: bounds)
         let points = quad.points.map { CGPoint(x: rect.minX + $0.x * rect.width, y: rect.minY + (1 - $0.y) * rect.height) }
         let path = UIBezierPath(); path.move(to: points[0]); points.dropFirst().forEach { path.addLine(to: $0) }; path.close()
+        if let spread, spread.geometry.isValid, spread.confidence > 0 {
+            let p = spread.geometry.points.map { CGPoint(x: rect.minX + $0.x * rect.width, y: rect.minY + (1 - $0.y) * rect.height) }
+            path.removeAllPoints(); path.move(to: p[0]); p.dropFirst().forEach { path.addLine(to: $0) }; path.close()
+            path.move(to: p[1]); path.addLine(to: p[4])
+            outline.strokeColor = (spread.canAutoSave ? UIColor.systemMint : UIColor.systemOrange).cgColor
+        } else { outline.strokeColor = UIColor.systemMint.cgColor }
         outline.path = path.cgPath
     }
 }

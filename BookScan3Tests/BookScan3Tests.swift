@@ -43,14 +43,15 @@ final class BookScan3Tests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: url), bad)
     }
     func testSplitAndFiltersProduceImages() throws {
-        let pages = try ImageProcessor.process(imageData(), split: true, spine: 0.4)
+        let geometry = SpreadGeometry.from(outer: Quad(points: [CGPoint(x: 0, y: 1), CGPoint(x: 1, y: 1), CGPoint(x: 1, y: 0), CGPoint(x: 0, y: 0)]), top: 0.4, bottom: 0.4)
+        let pages = try ImageProcessor.processSpread(imageData(), geometry: geometry)
         XCTAssertEqual(pages.count, 2)
         let left = try XCTUnwrap(UIImage(data: pages[0])), right = try XCTUnwrap(UIImage(data: pages[1]))
         XCTAssertEqual(left.size.width / (left.size.width + right.size.width), 0.4, accuracy: 0.02)
         for filter in ScanFilter.allCases {
             XCTAssertNotNil(UIImage(data: try ImageProcessor.render(pages[0], filter: filter)))
         }
-        let curved = try ImageProcessor.process(imageData(), split: true, spine: 0.4, curvature: 0.5)
+        let curved = try ImageProcessor.processSpread(imageData(), geometry: geometry, curvature: 0.5)
         XCTAssertEqual(curved.count, 2)
         XCTAssertEqual(UIImage(data: curved[0])?.size, left.size)
         XCTAssertNotEqual(curved[0], pages[0])
