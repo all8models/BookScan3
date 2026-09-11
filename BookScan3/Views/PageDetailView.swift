@@ -22,8 +22,15 @@ struct PageDetailView: View {
     @State private var review: CaptureRecord?
     @GestureState private var magnification: CGFloat = 1
     let bookID: UUID
-    let pageID: UUID
+    @State var pageID: UUID
     var page: ScanPage? { library.books.first { $0.id == bookID }?.pages.first { $0.id == pageID } }
+    private var pages: [ScanPage] { library.books.first { $0.id == bookID }?.pages ?? [] }
+    private var pageIndex: Int { pages.firstIndex { $0.id == pageID } ?? 0 }
+    private func move(_ offset: Int) {
+        let index = pageIndex + offset
+        guard pages.indices.contains(index) else { return }
+        speech.stop(); scale = 1; pageID = pages[index].id
+    }
     var body: some View {
         NavigationStack {
             if let page {
@@ -33,12 +40,19 @@ struct PageDetailView: View {
                         if page.text.isEmpty { ContentUnavailableView("인식한 텍스트가 없어요", systemImage: "text.viewfinder", description: Text("텍스트 인식을 눌러 이 페이지를 읽어 보세요.")) }
                         else { ScrollView { Text(page.text).font(.body).lineSpacing(7).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(24) } }
                     } else {
+                        GeometryReader { proxy in
                         ScrollView([.horizontal, .vertical]) {
-                            PageThumbnail(url: library.root.appending(path: page.imageName)).frame(width: 560 * min(4, max(1, scale * magnification)), height: 740 * min(4, max(1, scale * magnification))).padding(20)
+                            PageThumbnail(url: library.root.appending(path: page.imageName)).frame(width: max(1, proxy.size.width - 40) * min(4, max(1, scale * magnification)), height: max(1, proxy.size.height - 40) * min(4, max(1, scale * magnification))).padding(20)
                         }.defaultScrollAnchor(.center)
                             .gesture(MagnifyGesture().updating($magnification) { value, state, _ in state = value.magnification }.onEnded { scale = min(4, max(1, scale * $0.magnification)) })
                     }
+                    }
                     if library.busy { ProgressView(library.progress.isEmpty ? "처리 중…" : library.progress).padding() }
+                    HStack {
+                        Button { move(-1) } label: { Image(systemName: "chevron.left") }.accessibilityLabel("이전 페이지").disabled(pageIndex == 0)
+                        Text("\(pageIndex + 1) / \(pages.count)").font(.caption.monospacedDigit())
+                        Button { move(1) } label: { Image(systemName: "chevron.right") }.accessibilityLabel("다음 페이지").disabled(pageIndex + 1 >= pages.count)
+                    }
                     HStack {
                         if let captureID = page.captureID {
                             Button { Task {
@@ -61,7 +75,7 @@ struct PageDetailView: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("완료") { dismiss() } } }
             }
         }.onDisappear { speech.stop() }
-            .sheet(item: $review) { record in SpreadReviewView(record: record).environmentObject(library) }
+            .fullScreenCover(item: $review) { record in SpreadReviewView(record: record).environmentObject(library) }
             .alert("처리하지 못했습니다", isPresented: Binding(get: { library.error != nil }, set: { if !$0 { library.error = nil } })) { Button("확인") { library.error = nil } } message: { Text(library.error ?? "") }
     }
 }

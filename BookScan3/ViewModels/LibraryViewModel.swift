@@ -134,6 +134,16 @@ final class LibraryViewModel: ObservableObject {
         do { try await storage.deleteCapture(record); drafts.removeAll { $0.id == record.id } }
         catch { self.error = error.localizedDescription }
     }
+    func deletePages(_ ids: Set<UUID>, bookID: UUID) async {
+        guard !busy, var book = books.first(where: { $0.id == bookID }) else { return }
+        busy = true; defer { busy = false }
+        do {
+            book.pages.removeAll { ids.contains($0.id) }
+            try await replace(book)
+            try await storage.removeUnused(books)
+        } catch { self.error = error.localizedDescription }
+    }
+
     func recognize(bookID: UUID, pageID: UUID? = nil) async {
         guard !busy, var book = books.first(where: { $0.id == bookID }) else { return }
         busy = true; defer { busy = false; progress = "" }

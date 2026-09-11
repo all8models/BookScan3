@@ -31,6 +31,6 @@ struct BookScan3App: App {
 }
 
 enum Theme {
-    static let accent = Color(red: 0.16, green: 0.36, blue: 0.29)
-    static let paper = Color(red: 0.97, green: 0.96, blue: 0.93)
+    static let accent = Color(red: 0.16, green: 0.73, blue: 0.64)
+    static let paper = Color(red: 1, green: 1, blue: 1)
 }

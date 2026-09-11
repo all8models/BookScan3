@@ -36,7 +36,7 @@ struct SpreadReviewView: View {
                                 guard p.count == 6 else { return }
                                 path.move(to: p[0]); for point in p.dropFirst() { path.addLine(to: point) }; path.closeSubpath()
                                 path.move(to: p[1]); path.addLine(to: p[4])
-                            }.stroke(record.geometry.isValid ? Color.green : Color.red, style: StrokeStyle(lineWidth: 2))
+                            }.stroke(record.geometry.isValid ? Theme.accent : Color.red, style: StrokeStyle(lineWidth: 2))
                             ForEach(0..<6) { index in
                                 let point = screenPoints(rect)[index]
                                 Circle().fill(index == 1 || index == 4 ? Color.orange : Theme.accent)
@@ -68,7 +68,7 @@ struct SpreadReviewView: View {
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("나중에") { dismiss() }.disabled(library.busy) }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("저장") { Task { if await library.saveReviewed(record) { dismiss() } } }
+                        Button(record.isPending ? "두 페이지 저장" : "변경 저장") { Task { if await library.saveReviewed(record) { dismiss() } } }
                             .disabled(image == nil || !record.geometry.isValid || library.busy).accessibilityIdentifier("saveSpread")
                     }
                 }
