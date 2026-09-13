@@ -28,6 +28,7 @@ final class LibraryViewModel: ObservableObject {
     let storage: StorageServiceProtocol
     let root: URL
     private let ocr: OCRServiceProtocol
+    private var searchIndexer = BookSearchIndexer()
 
     init(
         root: URL = URL.documentsDirectory.appending(path: "BookScan3"),
@@ -39,10 +40,16 @@ final class LibraryViewModel: ObservableObject {
         self.ocr = ocr ?? OCRService()
     }
     var selected: Book? { books.first { $0.id == selectedID } }
+
+    func search(query: String) -> [Book] {
+        searchIndexer.search(query: query, in: books)
+    }
+
     func load() async {
         guard !loaded else { return }
         do {
             books = try await storage.load()
+            searchIndexer.index(books: books)
             let references = Set(books.flatMap(\.pages).compactMap(\.captureID))
             let bookIDs = Set(books.map(\.id))
             drafts = try await storage.captures().filter { $0.isPending && !references.contains($0.id) && bookIDs.contains($0.bookID) }
@@ -54,6 +61,7 @@ final class LibraryViewModel: ObservableObject {
     private func commit(_ updated: [Book]) async throws {
         try await storage.save(updated)
         books = updated
+        searchIndexer.index(books: updated)
     }
     func create(title: String) async {
         guard loaded, !busy else { return }

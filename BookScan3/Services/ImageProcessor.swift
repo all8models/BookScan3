@@ -91,13 +91,13 @@ enum ImageProcessor {
         }
     }
 
-    static func processSpread(_ data: Data, geometry: SpreadGeometry, curvature: Double = 0) throws -> [Data] {
+    static func processSpread(_ data: Data, geometry: SpreadGeometry, curvature: Double = 0, engine: DewarpEngineProtocol = CompositeDewarpEngine.shared) throws -> [Data] {
         guard geometry.isValid else { throw ScanError.message("좌우 경계가 겹치거나 뒤집혀 있어요. 여섯 점을 다시 맞춰 주세요.") }
         guard let image = CIImage(data: data, options: [.applyOrientationProperty: true]) else { throw ScanError.message("촬영 원본을 읽을 수 없습니다.") }
         return try [geometry.left, geometry.right].enumerated().map { index, quad in
             try autoreleasepool {
                 let corrected = correct(image, quad: quad)
-                return try jpeg(CylindricalDewarpService.dewarp(corrected, strength: curvature, bindingOnLeft: index == 1))
+                return try jpeg(engine.dewarp(corrected, strength: curvature, bindingOnLeft: index == 1))
             }
         }
     }

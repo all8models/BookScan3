@@ -14,7 +14,7 @@ struct LibraryView: View {
     @State private var recentPage: RecentPage?
     private struct RecentPage: Identifiable { let bookID: UUID; let page: ScanPage; var id: UUID { page.id } }
     private var filtered: [Book] {
-        library.books.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) || $0.pages.contains { $0.text.localizedCaseInsensitiveContains(search) } }
+        library.search(query: search)
             .sorted { newest ? $0.updatedAt > $1.updatedAt : $0.updatedAt < $1.updatedAt }
     }
     private var recent: [RecentPage] {

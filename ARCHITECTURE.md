@@ -1,6 +1,6 @@
 # BookScan3 시스템 아키텍처 정의서 (System Architecture Document)
 
-> **문서 버전**: 1.2.0 (Phase 2 Refactored)  
+> **문서 버전**: 1.3.0 (Phase 3 Completed)  
 > **표준 규격**: arc42 기반 소프트웨어 아키텍처 12원칙 (Software Architecture 12 Principles)  
 > **대상 시스템**: BookScan3 (iOS 고품질 모바일/태블릿 북 스캐너)  
 > **플랫폼 / 언어**: iOS 18.0+ (iPadOS / iOS), Swift 5.9+  
@@ -8,18 +8,19 @@
 >
 > > [!NOTE]
 > > **아키텍처 구현 상태 안내 (Implementation Status Note)**  
-> > 본 문서는 BookScan3의 **현재 실제 구현 아키텍처(Phase 1 & Phase 2)**와 **장기 목표 아키텍처(Target Architecture)**를 함께 기술합니다.  
-> > 1. **현재 구현된 아키텍처 (Current Implemented - Phase 1 & 2)**:  
-> >    - **DIP(의존성 역전 원칙)**: `StorageServiceProtocol`, `CameraServiceProtocol`, `OCRServiceProtocol` 추상화 도입 및 생성자 주입(DI).  
-> >    - **영속성 I/O 고도화**: 도서별 개별 메타데이터(`books/[id].json`) 동기화 및 `library.json` 부재 시 자동 복원(Self-healing).  
+> > 본 문서는 BookScan3의 **현재 실제 구현 완료된 아키텍처(Phase 1, 2, 3)**와 **향후 고도화 로드맵**을 체계적으로 기술합니다.  
+> > 1. **구현 완료된 아키텍처 (Current Implemented - Phase 1, 2 & 3)**:  
+> >    - **DIP(의존성 역전 원칙)**: `StorageServiceProtocol`, `CameraServiceProtocol`, `OCRServiceProtocol`, `DewarpEngineProtocol`, `InpaintingEngineProtocol` 추상 인터페이스 도입 및 생성자 주입(DI).  
+> >    - **AI/CV 다계층 곡면보정**: `CompositeDewarpEngine` (1계층 Core ML 신경망 번들 검출 시 추론, 미번들 시 2계층 Metal/CIKL 하드웨어 가속 실시간 Fallback), `FingerRemovalService` (Vision 사람/손가락 분할 기반 마스킹 인터페이스).  
+> >    - **고속 역색인 검색 엔진**: `BookSearchIndexer` (단어 토큰화 역색인 $O(1) \sim O(K)$ 검색, 도서 제목 및 OCR 본문 텍스트 실시간 인덱싱).  
+> >    - **SPM 모듈화 아키텍처**: `Package.swift` 매니페스트 구축 (`BookScanCore`, `BookScanStorage`, `BookScanVision`, `BookScanNetwork` 4개 서브모듈 계층 분리).  
+> >    - **영속성 I/O & 자가 복구**: 도서별 개별 메타데이터(`books/[id].json`) 실시간 동기화 및 `library.json` 부재 시 원본 보존 자동 복원(Self-healing).  
 > >    - **상태 머신 고도화**: `LibraryTaskState` (`idle`, `busy`, `recognizing`) 도입으로 진행률 및 상태 제어 개선.  
-> >    - **컴퓨터 비전**: Apple Native Vision 및 CoreImage 기반 동적 접힘선(Seam DP) 앙상블.  
 > >    - **기하학 모델**: 6점 기반 `SpreadGeometry` 및 원본 보존 사후 재보정 워크플로우.  
-> >    - **곡면 보정**: Metal Shading Language (`docs/Shaders.metal`) 번들 로드 지원 및 CIKL 자동 Fallback.  
 > >    - **네트워킹**: `NWListener` 기반 로컬 Wi-Fi HTTP PDF 스트리밍 서버 (동적 인터페이스 탐색, HEAD 메서드 지원).  
-> > 2. **미래 로드맵 (Target Architecture - Under Research)**:  
-> >    - Core ML 기반 온디바이스 3D 곡면 복원 모델 (`dewarp_unet.mlpackage`) 및 인페인팅(`FingerRemovalService`)은 모델 검증 후 단계적 탑재 예정.  
-> >    - SwiftData 기반 엔터프라이즈 영속성 계층 완전 이전 예정.
+> > 2. **향후 고도화 로드맵 (Future Enhancements)**:  
+> >    - Core ML 사전 학습 가중치 파일(`.mlmodelc`) 번들링 시 별도 코드 수정 없이 `CompositeDewarpEngine` Tier 1 즉시 활성화.  
+> >    - 대규모 라이브러리 확장 시 SwiftData 마이그레이션 적용 가능.
 
 ---
 
