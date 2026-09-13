@@ -10,12 +10,18 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var loaded = false
     @Published private(set) var drafts: [CaptureRecord] = []
     @Published var progress = ""
-    let storage: StorageManager
+    let storage: StorageServiceProtocol
     let root: URL
-    private let ocr = OCRService()
+    private let ocr: OCRServiceProtocol
 
-    init(root: URL = URL.documentsDirectory.appending(path: "BookScan3")) {
-        self.root = root; storage = StorageManager(root: root)
+    init(
+        root: URL = URL.documentsDirectory.appending(path: "BookScan3"),
+        storage: StorageServiceProtocol? = nil,
+        ocr: OCRServiceProtocol? = nil
+    ) {
+        self.root = root
+        self.storage = storage ?? StorageManager(root: root)
+        self.ocr = ocr ?? OCRService()
     }
     var selected: Book? { books.first { $0.id == selectedID } }
     func load() async {
@@ -166,5 +172,14 @@ final class LibraryViewModel: ObservableObject {
         guard !busy else { return nil }
         busy = true; progress = "PDF 만드는 중…"; defer { busy = false; progress = "" }
         do { return try await storage.export(book) } catch { self.error = error.localizedDescription; return nil }
+    }
+    func capture(_ id: UUID) async throws -> CaptureRecord {
+        try await storage.capture(id)
+    }
+    func source(_ record: CaptureRecord) async throws -> Data {
+        try await storage.source(record)
+    }
+    func cleanupUnusedFiles() async {
+        try? await storage.removeUnused(books)
     }
 }

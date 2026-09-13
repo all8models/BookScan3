@@ -75,7 +75,7 @@ struct SpreadReviewView: View {
         }.interactiveDismissDisabled(library.busy)
             .task {
                 do {
-                    let data = try await library.storage.source(record)
+                    let data = try await library.source(record)
                     image = await Task.detached {
                         guard let source = CGImageSourceCreateWithData(data as CFData, nil), let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 1800, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary) else { return nil as UIImage? }
                         return UIImage(cgImage: cg)

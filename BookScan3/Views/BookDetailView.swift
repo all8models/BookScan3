@@ -113,7 +113,7 @@ struct BookDetailView: View {
         }
         .alert("페이지를 삭제할까요?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
             Button("취소", role: .cancel) { deleting = nil }
-            Button("삭제", role: .destructive) { if var book, let deleting { book.pages.removeAll { $0.id == deleting.id }; Task { await library.update(book); try? await library.storage.removeUnused(library.books) } }; deleting = nil }
+            Button("삭제", role: .destructive) { if var book, let deleting { book.pages.removeAll { $0.id == deleting.id }; Task { await library.update(book); await library.cleanupUnusedFiles() } }; deleting = nil }
         }
         .onChange(of: photos) { _, items in
             Task {

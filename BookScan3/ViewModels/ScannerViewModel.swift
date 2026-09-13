@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor
 final class ScannerViewModel: ObservableObject {
-    let camera = CameraService()
+    let camera: CameraServiceProtocol
     @Published var quad: Quad?
     @Published var spread: SpreadDetection?
     @Published var reviewing = false
@@ -23,7 +23,8 @@ final class ScannerViewModel: ObservableObject {
     private var observedAt = Date.distantPast
     private var active = false
 
-    init() {
+    init(camera: CameraServiceProtocol = CameraService()) {
+        self.camera = camera
         camera.onDetection = { [weak self] quad, trigger, aspect, rotation, spread in
             Task { @MainActor in
                 guard let self, self.active else { return }

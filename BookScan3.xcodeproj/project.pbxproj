@@ -8,10 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		0C841B1C1C38282D92B9174D /* SpreadGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2701D1AD29F1132072E5E5 /* SpreadGeometry.swift */; };
+		157290024D7697985B3DAF42 /* Protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FA6CE80BC64209E6EF2F521 /* Protocols.swift */; };
 		24B10D4748F6B07DA3A3255C /* BookScan3UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33F9E174414E0476835C76CA /* BookScan3UITests.swift */; };
 		3BC6BE86802FAE32D8097AEE /* PCTransferServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 097C45DA9D944B9BBF907642 /* PCTransferServer.swift */; };
 		4096B1247910A389EA7C5D40 /* BookSpreadDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 621479F28F29F7E11524EB51 /* BookSpreadDetector.swift */; };
 		4B84739F87A412F7C31D8F19 /* CameraScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4DF55E0BD6FAAE674B056EE /* CameraScannerView.swift */; };
+		6257E2907B1DC0B349FF3C85 /* LibraryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F2FBA373653EF153515DE4 /* LibraryViewModelTests.swift */; };
 		651438D7C1B1A63FE3596361 /* PageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F814F619A81B2510DE108A /* PageDetailView.swift */; };
 		67010C3F7968D66A2BC68866 /* PCTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D211D66A4C1B6570AD7E52EF /* PCTransferView.swift */; };
 		67309C6A69F60C7AD6736125 /* CylindricalDewarpService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395D4BA0F4D23DB338A669D9 /* CylindricalDewarpService.swift */; };
@@ -49,6 +51,7 @@
 /* Begin PBXFileReference section */
 		019570C86E73485AA221CDFC /* ScannerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerViewModel.swift; sourceTree = "<group>"; };
 		097C45DA9D944B9BBF907642 /* PCTransferServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PCTransferServer.swift; sourceTree = "<group>"; };
+		1FA6CE80BC64209E6EF2F521 /* Protocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocols.swift; sourceTree = "<group>"; };
 		26234F72CF60E88033CA9B6E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		294C585DB47927E9BA1F00C3 /* Book.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
 		2BAA7C9D7BAD429CA8BA40D1 /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
@@ -56,6 +59,7 @@
 		33F9E174414E0476835C76CA /* BookScan3UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookScan3UITests.swift; sourceTree = "<group>"; };
 		395D4BA0F4D23DB338A669D9 /* CylindricalDewarpService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CylindricalDewarpService.swift; sourceTree = "<group>"; };
 		3E9BA3D026EC128821D0CAFC /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		50F2FBA373653EF153515DE4 /* LibraryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModelTests.swift; sourceTree = "<group>"; };
 		50FF164672F5DE34E0BFCE54 /* StorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageManager.swift; sourceTree = "<group>"; };
 		55F4BEEC241BBF8E470353BD /* BookScan3Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookScan3Tests.swift; sourceTree = "<group>"; };
 		5ECBAC534D98260A0C6F291A /* SpreadDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpreadDetectionTests.swift; sourceTree = "<group>"; };
@@ -87,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				55F4BEEC241BBF8E470353BD /* BookScan3Tests.swift */,
+				50F2FBA373653EF153515DE4 /* LibraryViewModelTests.swift */,
 				5ECBAC534D98260A0C6F291A /* SpreadDetectionTests.swift */,
 			);
 			path = BookScan3Tests;
@@ -100,6 +105,7 @@
 				395D4BA0F4D23DB338A669D9 /* CylindricalDewarpService.swift */,
 				2BAA7C9D7BAD429CA8BA40D1 /* ImageProcessor.swift */,
 				097C45DA9D944B9BBF907642 /* PCTransferServer.swift */,
+				1FA6CE80BC64209E6EF2F521 /* Protocols.swift */,
 				50FF164672F5DE34E0BFCE54 /* StorageManager.swift */,
 			);
 			path = Services;
@@ -293,6 +299,7 @@
 				3BC6BE86802FAE32D8097AEE /* PCTransferServer.swift in Sources */,
 				67010C3F7968D66A2BC68866 /* PCTransferView.swift in Sources */,
 				651438D7C1B1A63FE3596361 /* PageDetailView.swift in Sources */,
+				157290024D7697985B3DAF42 /* Protocols.swift in Sources */,
 				D0015E035434137E1CC92F32 /* ScannerViewModel.swift in Sources */,
 				0C841B1C1C38282D92B9174D /* SpreadGeometry.swift in Sources */,
 				7BDDB4ADFF75D396386318DB /* SpreadReviewView.swift in Sources */,
@@ -305,6 +312,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B7F4A6D95A1E99FD83417783 /* BookScan3Tests.swift in Sources */,
+				6257E2907B1DC0B349FF3C85 /* LibraryViewModelTests.swift in Sources */,
 				95484C51634B618E4C59BC2D /* SpreadDetectionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

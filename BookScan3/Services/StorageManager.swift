@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import ImageIO
 
-actor StorageManager {
+actor StorageManager: StorageServiceProtocol {
     let root: URL
     init(root: URL = URL.documentsDirectory.appending(path: "BookScan3")) {
         self.root = root

@@ -1,10 +1,23 @@
 # BookScan3 시스템 아키텍처 정의서 (System Architecture Document)
 
-> **문서 버전**: 1.0.0  
+> **문서 버전**: 1.1.0 (Phase 1 Refactored)  
 > **표준 규격**: arc42 기반 소프트웨어 아키텍처 12원칙 (Software Architecture 12 Principles)  
 > **대상 시스템**: BookScan3 (iOS 고품질 모바일/태블릿 북 스캐너)  
 > **플랫폼 / 언어**: iOS 18.0+ (iPadOS / iOS), Swift 5.9+  
-> **작성일자**: 2026-08-31  
+> **최근 개정일**: 2026-09-13  
+>
+> > [!NOTE]
+> > **아키텍처 구현 상태 안내 (Implementation Status Note)**  
+> > 본 문서는 BookScan3의 **현재 실제 구현 아키텍처(Phase 1)**와 **중장기 목표 아키텍처(Target Architecture)**를 함께 기술합니다.  
+> > 1. **현재 구현된 아키텍처 (Current Implemented)**:  
+> >    - **DIP(의존성 역전 원칙)**: `StorageServiceProtocol`, `CameraServiceProtocol`, `OCRServiceProtocol` 추상화 도입 및 생성자 주입(DI).  
+> >    - **컴퓨터 비전**: Apple Native Vision (`VNDetectDocumentSegmentationRequest`, `VNDetectRectanglesRequest`) 및 CoreImage 기반 동적 접힘선(Seam DP) 앙상블.  
+> >    - **기하학 모델**: 6점 기반 `SpreadGeometry` 및 원본 보존 사후 재보정 워크플로우.  
+> >    - **곡면 보정**: 경량 수평 원통형 워프 필터 (`CylindricalDewarpService`).  
+> >    - **네트워킹**: `NWListener` 기반 로컬 Wi-Fi HTTP PDF 스트리밍 서버 (동적 인터페이스 탐색).  
+> > 2. **미래 로드맵 (Target Architecture - Under Research)**:  
+> >    - Core ML 기반 온디바이스 3D 곡면 복원 모델 (`dewarp_unet.mlpackage`) 및 인페인팅(`FingerRemovalService`)은 모델 검증 후 단계적 탑재 예정.  
+> >    - Metal Shading Language (.metal) 프리컴파일 커널 전환 및 SwiftData 영속성 계층 고도화 예정.
 
 ---
 

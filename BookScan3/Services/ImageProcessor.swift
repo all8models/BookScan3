@@ -121,7 +121,7 @@ enum ImageProcessor {
     }
 }
 
-actor OCRService {
+actor OCRService: OCRServiceProtocol {
     func recognize(_ data: Data) throws -> String {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate

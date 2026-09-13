@@ -119,12 +119,21 @@ final class PCTransferServer: @unchecked Sendable {
         guard getifaddrs(&interfaces) == 0 else { return nil }
         defer { freeifaddrs(interfaces) }
         var pointer = interfaces
+        var candidates: [(name: String, ip: String)] = []
         while let current = pointer {
             defer { pointer = current.pointee.ifa_next }
-            guard let addr = current.pointee.ifa_addr, addr.pointee.sa_family == UInt8(AF_INET), String(cString: current.pointee.ifa_name) == "en0" else { continue }
+            guard let addr = current.pointee.ifa_addr, addr.pointee.sa_family == UInt8(AF_INET) else { continue }
+            let name = String(cString: current.pointee.ifa_name)
+            guard name != "lo0" else { continue }
             var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0 { return String(cString: host) }
+            if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0 {
+                let ip = String(cString: host)
+                if !ip.hasPrefix("127.") { candidates.append((name, ip)) }
+            }
         }
-        return nil
+        if let en0 = candidates.first(where: { $0.name == "en0" })?.ip { return en0 }
+        if let en = candidates.first(where: { $0.name.hasPrefix("en") })?.ip { return en }
+        if let other = candidates.first(where: { $0.name.hasPrefix("bridge") || $0.name.hasPrefix("pdp_ip") })?.ip { return other }
+        return candidates.first?.ip
     }
 }

@@ -1,7 +1,7 @@
 import AVFoundation
 import CoreImage
 
-final class CameraService: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate, @unchecked Sendable {
+final class CameraService: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate, CameraServiceProtocol, @unchecked Sendable {
     let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "camera.session", qos: .userInitiated)
     private let analysisQueue = DispatchQueue(label: "camera.analysis", qos: .userInitiated)

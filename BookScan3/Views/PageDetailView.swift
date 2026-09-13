@@ -56,7 +56,7 @@ struct PageDetailView: View {
                     HStack {
                         if let captureID = page.captureID {
                             Button { Task {
-                                do { review = try await library.storage.capture(captureID) }
+                                do { review = try await library.capture(captureID) }
                                 catch { library.error = error.localizedDescription }
                             } } label: { Image(systemName: "crop.rotate") }.accessibilityLabel("원본에서 경계 다시 조정")
                         }
