@@ -8,10 +8,18 @@ enum TransferRoute: Equatable {
         let lines = header.components(separatedBy: "\r\n")
         guard let first = lines.first else { return .rejected }
         let fields = first.split(separator: " ")
-        guard fields.count == 3, fields[0] == "GET", fields[2] == "HTTP/1.1" || fields[2] == "HTTP/1.0",
-              let components = URLComponents(string: String(fields[1])), components.scheme == nil, components.host == nil,
+        guard fields.count == 3,
+              fields[0] == "GET" || fields[0] == "HEAD",
+              fields[2].hasPrefix("HTTP/"),
+              let components = URLComponents(string: String(fields[1])),
+              components.scheme == nil, components.host == nil,
+              !components.path.contains(".."),
               components.queryItems?.first(where: { $0.name == "token" })?.value == token else { return .rejected }
-        switch components.path { case "/": return .landing; case "/download.pdf": return .pdf; default: return .rejected }
+        switch components.path {
+        case "/": return .landing
+        case "/download.pdf": return .pdf
+        default: return .rejected
+        }
     }
 }
 

@@ -212,4 +212,50 @@ final class LibraryViewModelTests: XCTestCase {
         let callCount = await mockStorage.removeUnusedCallCount
         XCTAssertEqual(callCount, 1)
     }
+
+    func testTaskStateReflectsOperationAndRecognizingProgress() async throws {
+        let mockStorage = MockStorageManager()
+        let mockOCR = MockOCRService()
+        let vm = LibraryViewModel(storage: mockStorage, ocr: mockOCR)
+        await vm.load()
+        await vm.create(title: "OCR 테스트 도서")
+
+        guard var book = vm.books.first else {
+            XCTFail("책이 생성되어야 합니다.")
+            return
+        }
+
+        let page = ScanPage(imageName: "test.jpg", originalName: "test-o.jpg", thumbnailName: "test-t.jpg")
+        book.pages = [page]
+        await vm.update(book)
+
+        XCTAssertEqual(vm.taskState, .idle)
+        XCTAssertFalse(vm.busy)
+
+        await vm.recognize(bookID: book.id, pageID: page.id)
+
+        XCTAssertEqual(vm.taskState, .idle)
+        XCTAssertFalse(vm.busy)
+        XCTAssertEqual(vm.books.first?.pages.first?.text, "모의 OCR 인식 결과")
+    }
+
+    func testTaskStateDuringExport() async {
+        let mockStorage = MockStorageManager()
+        let vm = LibraryViewModel(storage: mockStorage)
+        await vm.load()
+        await vm.create(title: "수출 도서")
+
+        guard var book = vm.books.first else {
+            XCTFail("책이 생성되어야 합니다.")
+            return
+        }
+        let page = ScanPage(imageName: "test.jpg", originalName: "test-o.jpg", thumbnailName: "test-t.jpg")
+        book.pages = [page]
+        await vm.update(book)
+
+        let exportedURL = await vm.export(book)
+        XCTAssertNotNil(exportedURL)
+        XCTAssertEqual(vm.taskState, .idle)
+        XCTAssertFalse(vm.busy)
+    }
 }

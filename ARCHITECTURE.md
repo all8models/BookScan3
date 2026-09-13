@@ -1,6 +1,6 @@
 # BookScan3 시스템 아키텍처 정의서 (System Architecture Document)
 
-> **문서 버전**: 1.1.0 (Phase 1 Refactored)  
+> **문서 버전**: 1.2.0 (Phase 2 Refactored)  
 > **표준 규격**: arc42 기반 소프트웨어 아키텍처 12원칙 (Software Architecture 12 Principles)  
 > **대상 시스템**: BookScan3 (iOS 고품질 모바일/태블릿 북 스캐너)  
 > **플랫폼 / 언어**: iOS 18.0+ (iPadOS / iOS), Swift 5.9+  
@@ -8,16 +8,18 @@
 >
 > > [!NOTE]
 > > **아키텍처 구현 상태 안내 (Implementation Status Note)**  
-> > 본 문서는 BookScan3의 **현재 실제 구현 아키텍처(Phase 1)**와 **중장기 목표 아키텍처(Target Architecture)**를 함께 기술합니다.  
-> > 1. **현재 구현된 아키텍처 (Current Implemented)**:  
+> > 본 문서는 BookScan3의 **현재 실제 구현 아키텍처(Phase 1 & Phase 2)**와 **장기 목표 아키텍처(Target Architecture)**를 함께 기술합니다.  
+> > 1. **현재 구현된 아키텍처 (Current Implemented - Phase 1 & 2)**:  
 > >    - **DIP(의존성 역전 원칙)**: `StorageServiceProtocol`, `CameraServiceProtocol`, `OCRServiceProtocol` 추상화 도입 및 생성자 주입(DI).  
-> >    - **컴퓨터 비전**: Apple Native Vision (`VNDetectDocumentSegmentationRequest`, `VNDetectRectanglesRequest`) 및 CoreImage 기반 동적 접힘선(Seam DP) 앙상블.  
+> >    - **영속성 I/O 고도화**: 도서별 개별 메타데이터(`books/[id].json`) 동기화 및 `library.json` 부재 시 자동 복원(Self-healing).  
+> >    - **상태 머신 고도화**: `LibraryTaskState` (`idle`, `busy`, `recognizing`) 도입으로 진행률 및 상태 제어 개선.  
+> >    - **컴퓨터 비전**: Apple Native Vision 및 CoreImage 기반 동적 접힘선(Seam DP) 앙상블.  
 > >    - **기하학 모델**: 6점 기반 `SpreadGeometry` 및 원본 보존 사후 재보정 워크플로우.  
-> >    - **곡면 보정**: 경량 수평 원통형 워프 필터 (`CylindricalDewarpService`).  
-> >    - **네트워킹**: `NWListener` 기반 로컬 Wi-Fi HTTP PDF 스트리밍 서버 (동적 인터페이스 탐색).  
+> >    - **곡면 보정**: Metal Shading Language (`docs/Shaders.metal`) 번들 로드 지원 및 CIKL 자동 Fallback.  
+> >    - **네트워킹**: `NWListener` 기반 로컬 Wi-Fi HTTP PDF 스트리밍 서버 (동적 인터페이스 탐색, HEAD 메서드 지원).  
 > > 2. **미래 로드맵 (Target Architecture - Under Research)**:  
 > >    - Core ML 기반 온디바이스 3D 곡면 복원 모델 (`dewarp_unet.mlpackage`) 및 인페인팅(`FingerRemovalService`)은 모델 검증 후 단계적 탑재 예정.  
-> >    - Metal Shading Language (.metal) 프리컴파일 커널 전환 및 SwiftData 영속성 계층 고도화 예정.
+> >    - SwiftData 기반 엔터프라이즈 영속성 계층 완전 이전 예정.
 
 ---
 

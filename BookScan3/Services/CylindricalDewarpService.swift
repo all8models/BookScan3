@@ -3,7 +3,7 @@ import CoreImage
 /// Lightweight, user-adjustable horizontal cylindrical approximation.
 /// It does not infer a 3D surface or remove fingers; learned models are not bundled.
 enum CylindricalDewarpService {
-    private static let kernel = CIWarpKernel(source: """
+    private static let fallbackKernel = CIWarpKernel(source: """
         kernel vec2 cylindrical(float width, float angle, float bindingOnLeft) {
             vec2 p = destCoord();
             float u = clamp(p.x / width, 0.0, 1.0);
@@ -13,6 +13,15 @@ enum CylindricalDewarpService {
             return vec2(mapped * width, p.y);
         }
         """)
+
+    private static let kernel: CIWarpKernel? = {
+        if let url = Bundle.main.url(forResource: "default", withExtension: "metallib"),
+           let data = try? Data(contentsOf: url),
+           let metalKernel = try? CIWarpKernel(functionName: "cylindrical", fromMetalLibraryData: data) {
+            return metalKernel
+        }
+        return fallbackKernel
+    }()
 
     static func dewarp(_ image: CIImage, strength: Double, bindingOnLeft: Bool) throws -> CIImage {
         guard strength > 0.001 else { return image }

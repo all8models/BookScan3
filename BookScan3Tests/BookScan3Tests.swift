@@ -77,4 +77,27 @@ final class BookScan3Tests: XCTestCase {
             XCTAssertEqual(TransferRoute.parse(request, token: "secret"), .rejected)
         }
     }
+    func testStorageIndividualBookSyncAndRecovery() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = StorageManager(root: root)
+        var book = Book(title: "분할 저장 테스트")
+        book.pages = try await store.savePages([imageData()], filter: .original)
+        try await store.save([book])
+
+        let bookFile = root.appending(path: "books/\(book.id.uuidString).json")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: bookFile.path))
+
+        let libraryFile = root.appending(path: "library.json")
+        try FileManager.default.removeItem(at: libraryFile)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: libraryFile.path))
+
+        let recovered = try await store.load()
+        XCTAssertEqual(recovered.count, 1)
+        XCTAssertEqual(recovered.first?.title, "분할 저장 테스트")
+    }
+    func testTransferRouteSupportsHeadRequests() {
+        XCTAssertEqual(TransferRoute.parse("HEAD /?token=secret HTTP/1.1\r\n\r\n", token: "secret"), .landing)
+        XCTAssertEqual(TransferRoute.parse("HEAD /download.pdf?token=secret HTTP/1.1\r\n\r\n", token: "secret"), .pdf)
+    }
 }

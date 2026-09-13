@@ -1,6 +1,20 @@
 import SwiftUI
 import CoreImage
 
+enum LibraryTaskState: Equatable, Sendable {
+    case idle
+    case busy(operation: String)
+    case recognizing(current: Int, total: Int)
+
+    var description: String {
+        switch self {
+        case .idle: return ""
+        case .busy(let op): return op
+        case .recognizing(let current, let total): return "텍스트 인식 \(current) / \(total)"
+        }
+    }
+}
+
 @MainActor
 final class LibraryViewModel: ObservableObject {
     @Published private(set) var books: [Book] = []
@@ -10,6 +24,7 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var loaded = false
     @Published private(set) var drafts: [CaptureRecord] = []
     @Published var progress = ""
+    @Published private(set) var taskState: LibraryTaskState = .idle
     let storage: StorageServiceProtocol
     let root: URL
     private let ocr: OCRServiceProtocol
@@ -68,7 +83,7 @@ final class LibraryViewModel: ObservableObject {
     @discardableResult
     func add(data: Data, to id: UUID, split: Bool, spine: Double?, filter: ScanFilter, curvature: Double = 0, forceReview: Bool = false, hint: SpreadCaptureHint? = nil) async -> CaptureRecord? {
         guard !busy, books.contains(where: { $0.id == id }) else { return nil }
-        busy = true; progress = "페이지 보정 및 저장 중…"; defer { busy = false; progress = "" }
+        busy = true; progress = "페이지 보정 및 저장 중…"; taskState = .busy(operation: progress); defer { busy = false; progress = ""; taskState = .idle }
         do {
             if split {
                 var record = try await storage.createCapture(data: data, bookID: id, filter: filter, curvature: curvature)
@@ -100,7 +115,7 @@ final class LibraryViewModel: ObservableObject {
 
     func saveReviewed(_ record: CaptureRecord) async -> Bool {
         guard !busy else { return false }
-        busy = true; progress = "원본에서 좌우 페이지 보정 중…"; defer { busy = false; progress = "" }
+        busy = true; progress = "원본에서 좌우 페이지 보정 중…"; taskState = .busy(operation: progress); defer { busy = false; progress = ""; taskState = .idle }
         do { try await saveCapturePages(record); return true }
         catch { self.error = error.localizedDescription; return false }
     }
@@ -152,11 +167,12 @@ final class LibraryViewModel: ObservableObject {
 
     func recognize(bookID: UUID, pageID: UUID? = nil) async {
         guard !busy, var book = books.first(where: { $0.id == bookID }) else { return }
-        busy = true; defer { busy = false; progress = "" }
+        busy = true; defer { busy = false; progress = ""; taskState = .idle }
         do {
             let indices = book.pages.indices.filter { pageID == nil || book.pages[$0].id == pageID }
             for (offset, index) in indices.enumerated() {
-                progress = "텍스트 인식 \(offset + 1) / \(indices.count)"
+                taskState = .recognizing(current: offset + 1, total: indices.count)
+                progress = taskState.description
                 book.pages[index].text = try await ocr.recognize(storage.data(for: book.pages[index]))
                 try await replace(book)
             }
@@ -170,7 +186,7 @@ final class LibraryViewModel: ObservableObject {
     }
     func export(_ book: Book) async -> URL? {
         guard !busy else { return nil }
-        busy = true; progress = "PDF 만드는 중…"; defer { busy = false; progress = "" }
+        busy = true; progress = "PDF 만드는 중…"; taskState = .busy(operation: progress); defer { busy = false; progress = ""; taskState = .idle }
         do { return try await storage.export(book) } catch { self.error = error.localizedDescription; return nil }
     }
     func capture(_ id: UUID) async throws -> CaptureRecord {

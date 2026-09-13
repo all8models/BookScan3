@@ -8,16 +8,53 @@ actor StorageManager: StorageServiceProtocol {
         self.root = root
     }
 
+    private var booksDirectory: URL { root.appending(path: "books") }
+
     func load() throws -> [Book] {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        let url = root.appending(path: "library.json")
-        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
-        return try JSONDecoder().decode([Book].self, from: Data(contentsOf: url))
+        let libraryURL = root.appending(path: "library.json")
+        if FileManager.default.fileExists(atPath: libraryURL.path) {
+            let data = try Data(contentsOf: libraryURL)
+            let books = try JSONDecoder().decode([Book].self, from: data)
+            try? syncIndividualBooks(books)
+            return books
+        }
+        return try loadFromIndividualBooks()
     }
 
     func save(_ books: [Book]) throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        try JSONEncoder().encode(books).write(to: root.appending(path: "library.json"), options: [.atomic, .completeFileProtectionUnlessOpen])
+        let encoded = try JSONEncoder().encode(books)
+        try encoded.write(to: root.appending(path: "library.json"), options: [.atomic, .completeFileProtectionUnlessOpen])
+        try? syncIndividualBooks(books)
+    }
+
+    private func syncIndividualBooks(_ books: [Book]) throws {
+        if books.isEmpty {
+            if FileManager.default.fileExists(atPath: booksDirectory.path) {
+                try? FileManager.default.removeItem(at: booksDirectory)
+            }
+            return
+        }
+        try FileManager.default.createDirectory(at: booksDirectory, withIntermediateDirectories: true)
+        let currentFiles = Set(books.map { "\($0.id.uuidString).json" })
+        for book in books {
+            let bookURL = booksDirectory.appending(path: "\(book.id.uuidString).json")
+            try? JSONEncoder().encode(book).write(to: bookURL, options: [.atomic, .completeFileProtectionUnlessOpen])
+        }
+        if let existingFiles = try? FileManager.default.contentsOfDirectory(atPath: booksDirectory.path) {
+            for file in existingFiles where file.hasSuffix(".json") && !currentFiles.contains(file) {
+                try? FileManager.default.removeItem(at: booksDirectory.appending(path: file))
+            }
+        }
+    }
+
+    private func loadFromIndividualBooks() throws -> [Book] {
+        guard FileManager.default.fileExists(atPath: booksDirectory.path) else { return [] }
+        let files = try FileManager.default.contentsOfDirectory(at: booksDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+        return try files.map { try JSONDecoder().decode(Book.self, from: Data(contentsOf: $0)) }
+            .sorted { $0.createdAt < $1.createdAt }
     }
 
     func savePages(_ images: [Data], filter: ScanFilter) throws -> [ScanPage] {
@@ -99,6 +136,7 @@ actor StorageManager: StorageServiceProtocol {
         for record in try captures() where !references.contains(record.id) && (!record.isPending || !bookIDs.contains(record.bookID)) {
             try deleteCapture(record)
         }
+        try? syncIndividualBooks(books)
     }
 
     func export(_ book: Book) throws -> URL {
