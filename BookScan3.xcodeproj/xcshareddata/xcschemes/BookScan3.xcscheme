@@ -39,31 +39,7 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "F0C6EC30A1D4C32456A42E1D"
-               BuildableName = "BookScan3Tests.xctest"
-               BlueprintName = "BookScan3Tests"
-               ReferencedContainer = "container:BookScan3.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2368254DFA9DD61BC1FFC94F"
-               BuildableName = "BookScan3UITests.xctest"
-               BlueprintName = "BookScan3UITests"
-               ReferencedContainer = "container:BookScan3.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

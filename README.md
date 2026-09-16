@@ -30,8 +30,6 @@ xcodebuild -project BookScan3.xcodeproj -scheme BookScan3 \
 - **페이지 보기**: 화면 크기에 맞춘 이미지 확대와 이전/다음 페이지 이동을 제공합니다. 원본 경계 재조정은 전체 화면으로 열립니다.
 - **경계 확인**: 기존 여섯 점 드래그와 미세 조정, 원본 보존을 유지합니다. `두 페이지 저장` 후 촬영을 계속할 수 있습니다.
 
-구체적인 참고 자료와 설계는 [화면 개편 계획서](docs/VFLAT_UI_REDESIGN_PLAN.md)에 기록했습니다.
-
 ## 현재 사용 흐름과 확인 상태
 
 펼친 책의 두 페이지를 한 번에 촬영하고, 사용자가 원본 위에서 **각 페이지의 영역과 접힘선을 직접 정할 수 있습니다**. 자동 검출 결과도 수정할 수 있으며, 저장한 뒤에도 원본에서 경계를 다시 조정할 수 있습니다.
@@ -62,7 +60,7 @@ xcodebuild -project BookScan3.xcodeproj -scheme BookScan3 \
 
 ## 구조
 
-`ARCHITECTURE.md`를 기준으로 UI, 상태 관리, 영상 처리, 저장, 전송을 분리했습니다. 양면 검출 개선 전의 원인 분석과 설계 제안은 [양면 검출 조사 문서](docs/BOOK_SPREAD_DETECTION_RESEARCH.md)에 기록되어 있습니다.
+`ARCHITECTURE.md`를 기준으로 UI, 상태 관리, 영상 처리, 저장, 전송을 분리했습니다.
 
 | 영역 | 구현 |
 | --- | --- |
