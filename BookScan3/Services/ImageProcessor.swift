@@ -4,7 +4,7 @@ import UIKit
 import Vision
 
 struct Quad: Equatable, Sendable {
-    var points: [CGPoint] // top-left, top-right, bottom-right, bottom-left; Vision coordinates
+    var points: [CGPoint] // 좌상단, 우상단, 우하단, 좌하단 (시계 방향); Vision 정규화 좌표계
     init(_ observation: VNRectangleObservation) {
         points = [observation.topLeft, observation.topRight, observation.bottomRight, observation.bottomLeft]
     }

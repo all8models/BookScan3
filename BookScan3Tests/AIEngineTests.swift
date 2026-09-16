@@ -15,12 +15,12 @@ final class AIEngineTests: XCTestCase {
         let engine = CompositeDewarpEngine.shared
         let input = CIImage(color: .gray).cropped(to: CGRect(x: 0, y: 0, width: 300, height: 400))
         
-        // Right side (binding on left)
+        // 오른쪽 페이지 (제본선이 왼쪽에 위치)
         let outputRight = try engine.dewarp(input, strength: 0.15, bindingOnLeft: true)
         XCTAssertGreaterThan(outputRight.extent.width, 0)
         XCTAssertGreaterThan(outputRight.extent.height, 0)
 
-        // Left side (binding on right)
+        // 왼쪽 페이지 (제본선이 오른쪽에 위치)
         let outputLeft = try engine.dewarp(input, strength: 0.15, bindingOnLeft: false)
         XCTAssertGreaterThan(outputLeft.extent.width, 0)
         XCTAssertGreaterThan(outputLeft.extent.height, 0)
@@ -52,23 +52,23 @@ final class AIEngineTests: XCTestCase {
         let allBooks = [bookA, bookB, bookC]
         indexer.index(books: allBooks)
 
-        // Search by title token
+        // 도서 제목 토큰 검색
         let titleResults = indexer.search(query: "concurrency", in: allBooks)
         XCTAssertEqual(titleResults.map(\.id), [bookA.id])
 
-        // Search by OCR page text token
+        // OCR 페이지 본문 텍스트 토큰 검색
         let textResults = indexer.search(query: "metal", in: allBooks)
         XCTAssertEqual(textResults.map(\.id), [bookB.id])
 
-        // Search matching another book title
+        // 다른 도서 제목 매칭 검색
         let manualResults = indexer.search(query: "clean", in: allBooks)
         XCTAssertEqual(manualResults.map(\.id), [bookC.id])
 
-        // Empty search returns all books
+        // 공백 쿼리 시 전체 도서 반환
         let emptyResults = indexer.search(query: "   ", in: allBooks)
         XCTAssertEqual(emptyResults.count, 3)
 
-        // Non-matching query returns empty
+        // 일치하는 항목이 없을 때 빈 배열 반환
         let nonMatching = indexer.search(query: "NonexistentKeyword123", in: allBooks)
         XCTAssertTrue(nonMatching.isEmpty)
     }

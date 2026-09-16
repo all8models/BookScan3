@@ -1,7 +1,7 @@
 import CoreImage
 import Vision
 
-/// Candidate fusion for two-page spreads. Detection never crops the saved source.
+/// 양면(스프레드) 도서 감지 및 후보 융합 엔진. 저장된 원본 사진은 절대 임의로 잘라내지 않습니다.
 enum BookSpreadDetector {
     struct Candidate { var quad: Quad; var confidence: Double }
 
@@ -16,15 +16,15 @@ enum BookSpreadDetector {
         rectangles.minimumConfidence = 0.45
         rectangles.quadratureTolerance = 40
         let document = VNDetectDocumentSegmentationRequest()
-        // One request may fail without preventing the other candidate source from working.
+        // 하나의 요청이 실패하더라도 다른 후보 탐색에 영향을 주지 않도록 독립적으로 시도합니다.
         try? VNImageRequestHandler(ciImage: image).perform([rectangles])
         try? VNImageRequestHandler(ciImage: image).perform([document])
         let candidates = (rectangles.results ?? []).map { Candidate(quad: Quad($0), confidence: Double($0.confidence)) }
         if manualSpine == nil, var pair = bestPair(candidates) {
             let leftSupport = boundarySupport(image, quad: pair.geometry.left, skipping: 1)
             let rightSupport = boundarySupport(image, quad: pair.geometry.right, skipping: 3)
-            // Printed text columns can also be rectangles: require paper/background
-            // evidence along the exterior before authorizing an automatic crop.
+            // 인쇄된 텍스트 단락 또한 직사각형으로 인식될 수 있으므로,
+            // 자동 분할을 승인하기 전 외곽을 따라 종이/배경 경계 증거가 충분한지 확인합니다.
             if min(leftSupport, rightSupport) < 0.5 || touchesFrame(pair.geometry.outer) {
                 pair.confidence = min(pair.confidence, 0.6)
                 pair.reason = "종이 바깥 경계가 불확실해요. 글자가 잘리지 않도록 확인해 주세요."
@@ -36,8 +36,7 @@ enum BookSpreadDetector {
         if let observation = document.results?.first {
             var quad = Quad(observation)
             if let mask = observation.globalSegmentationMask {
-                // Use the segmentation silhouette, retaining the Vision quad if the
-                // mask is ambiguous or disagrees too strongly with the proposal.
+                // 세그멘테이션 실루엣을 사용하되, 마스크가 모호하거나 사각형 제안과 너무 크게 어긋나면 Vision 사각형을 유지합니다.
                 if let refined = maskOutline(CIImage(cvPixelBuffer: mask.pixelBuffer)), refined.distance(to: quad) < 0.12 { quad = refined }
             }
             outerCandidates.append(Candidate(quad: quad, confidence: Double(observation.confidence)))
@@ -57,7 +56,7 @@ enum BookSpreadDetector {
         let seam = seamEstimate(rectified)
         let top = manualSpine ?? seam.top, bottom = manualSpine ?? seam.bottom
         let geometry = SpreadGeometry.from(outer: outer.quad, top: top, bottom: bottom)
-        // A manual ratio does not prove the outer boundary: always ask for review.
+        // 수동 제본선 비율은 외곽 경계의 완전성을 증명하지 못하므로 항상 사용자 검토를 유도합니다.
         let hasBoundary = boundarySupport(image, quad: outer.quad) >= 0.5 && !touchesFrame(outer.quad)
         let confidence = manualSpine == nil && seam.confidence > 0.82 && outer.confidence > 0.75 && hasBoundary ? 0.82 : 0.55
         return SpreadDetection(geometry: geometry, confidence: confidence,
@@ -131,7 +130,7 @@ enum BookSpreadDetector {
         return result
     }
 
-    /// Fits the outer mask edges near Vision's corner positions, rather than text edges.
+    /// 텍스트 경계 대신 Vision 모서리 위치 근처의 외곽 마스크 경계를 정밀 피팅합니다.
     private static func maskOutline(_ image: CIImage) -> Quad? {
         let n = 192, values = grayscale(image, width: 192, height: 192)
         var occupied: [(y: Int, left: Int, right: Int)] = []
@@ -145,8 +144,8 @@ enum BookSpreadDetector {
         return q.isValid ? q : nil
     }
 
-    /// Track a locally dark, continuous gutter; fit independent top/bottom intercepts.
-    /// A low-confidence fit remains editable and must not silently authorize a split.
+    /// 국소적으로 어두운 연속적인 접힘선(Gutter)을 추적하여 상단 및 하단 절편을 독립적으로 계산합니다.
+    /// 신뢰도가 낮은 경우 사용자 수동 조정을 허용하며 임의로 자동 분할을 승인하지 않습니다.
     static func seamEstimate(_ image: CIImage) -> (top: Double, bottom: Double, confidence: Double) {
         let w = 192, h = 160
         let gray = grayscale(image, width: w, height: h)

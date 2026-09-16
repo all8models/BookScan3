@@ -8,7 +8,7 @@ struct ScanPage: Identifiable, Codable, Equatable, Sendable {
     var text: String = ""
     var filter: ScanFilter = .original
     var createdAt = Date()
-    // Optional fields keep libraries written by version 1 decodable.
+    // 이전 버전(v1)에서 저장된 라이브러리 메타데이터와의 하위 호환 디코딩을 위해 옵셔널로 선언
     var captureID: UUID?
     var captureSide: Int?
 }

@@ -138,7 +138,7 @@ final class LibraryViewModel: ObservableObject {
         var pages = try await storage.savePages(images, filter: record.filter)
         for index in pages.indices { pages[index].captureID = record.id; pages[index].captureSide = index }
         if book.pages.contains(where: { $0.captureID == record.id }) {
-            // Preserve ordering and IDs; do not resurrect a sibling the user deleted.
+            // 페이지 순서와 ID를 유지하며, 사용자가 명시적으로 삭제한 형제 페이지는 다시 생성하지 않습니다.
             for index in book.pages.indices where book.pages[index].captureID == record.id {
                 guard let side = book.pages[index].captureSide, pages.indices.contains(side) else { throw ScanError.message("페이지 연결 정보가 올바르지 않습니다.") }
                 var page = pages[side]
@@ -150,8 +150,8 @@ final class LibraryViewModel: ObservableObject {
         try await storage.saveCapture(record)
         try await replace(book)
         var completed = record; completed.isPending = false
-        // Library metadata is the authoritative commit. If this marker write fails,
-        // startup still recognizes the capture by its page references.
+        // 라이브러리 메타데이터 저장이 최종 확정(Commit) 기준입니다. 이 완료 마커 저장이 실패하더라도,
+        // 앱 재실행 시 페이지 참조 정보를 통해 캡처를 온전히 복원할 수 있습니다.
         try? await storage.saveCapture(completed)
         drafts.removeAll { $0.id == record.id }
         try? await storage.removeUnused(books)

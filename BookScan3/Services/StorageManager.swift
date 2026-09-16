@@ -99,7 +99,7 @@ actor StorageManager: StorageServiceProtocol {
     func createCapture(data: Data, bookID: UUID, filter: ScanFilter, curvature: Double) throws -> CaptureRecord {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         var record = CaptureRecord(bookID: bookID, sourceName: "", filter: filter, curvature: curvature)
-        // Retain the exact input bytes, including EXIF orientation and HEIC/JPEG format.
+        // EXIF 회전 정보 및 HEIC/JPEG 포맷을 포함한 원본 입력 바이트를 손실 없이 그대로 보존합니다.
         record.sourceName = "\(record.id.uuidString).source"
         try data.write(to: root.appending(path: record.sourceName), options: [.atomic, .completeFileProtectionUnlessOpen])
         do { try saveCapture(record) }

@@ -197,7 +197,7 @@ private final class PreviewView: UIView {
         if let connection = preview.connection, connection.isVideoRotationAngleSupported(rotation) { connection.videoRotationAngle = rotation }
         seam.path = nil; numbers.forEach { $0.isHidden = true }
         guard let quad else { outline.path = nil; return }
-        // Match the actual rotated analysis buffer; avoid assuming a camera aspect ratio.
+        // 카메라 화면 비율을 임의 추정하지 않고, 회전이 적용된 실제 분석 버퍼 비율에 맞춥니다.
         let rect = AVMakeRect(aspectRatio: CGSize(width: aspect, height: 1), insideRect: bounds)
         let points = quad.points.map { CGPoint(x: rect.minX + $0.x * rect.width, y: rect.minY + (1 - $0.y) * rect.height) }
         let path = UIBezierPath(); path.move(to: points[0]); points.dropFirst().forEach { path.addLine(to: $0) }; path.close()

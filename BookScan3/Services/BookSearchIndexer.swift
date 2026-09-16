@@ -1,7 +1,7 @@
 import Foundation
 
-/// Fast in-memory tokenized search index for books and OCR page contents.
-/// Replaces repeated full O(N*M) page scans with precomputed token matching.
+/// 도서 및 OCR 페이지 본문 텍스트를 위한 고속 인메모리 토큰화 검색 인덱서.
+/// 매 검색마다 반복되는 O(N*M) 전체 페이지 전수 스캔을 사전 계산된 토큰 매칭으로 대체합니다.
 struct BookSearchIndexer: Sendable {
     private var tokenToBookIDs: [String: Set<UUID>] = [:]
     private var bookTitles: [UUID: String] = [:]

@@ -18,7 +18,7 @@ final class SpreadDetectionTests: XCTestCase {
         let right = BookSpreadDetector.Candidate(quad: quad(0.5, 0.94), confidence: 0.95)
         let pair = try XCTUnwrap(BookSpreadDetector.bestPair([left, right]))
         XCTAssertTrue(pair.geometry.isValid)
-        // Use identical seam endpoint heights to model a clearly adjacent spread.
+        // 명확히 인접한 양면 페이지를 모델링하기 위해 동일한 접힘선 끝점 좌표를 사용합니다.
         var alignedRight = right
         alignedRight.quad.points[0] = left.quad.points[1]
         alignedRight.quad.points[3] = left.quad.points[2]

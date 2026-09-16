@@ -58,7 +58,7 @@
 		26234F72CF60E88033CA9B6E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		294C585DB47927E9BA1F00C3 /* Book.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
 		2BAA7C9D7BAD429CA8BA40D1 /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
-		2F450EBEA38E7CCAE9AD55F0 /* BookScan3.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BookScan3.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F450EBEA38E7CCAE9AD55F0 /* BookScan3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookScan3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		33F9E174414E0476835C76CA /* BookScan3UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookScan3UITests.swift; sourceTree = "<group>"; };
 		395D4BA0F4D23DB338A669D9 /* CylindricalDewarpService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CylindricalDewarpService.swift; sourceTree = "<group>"; };
 		3ABF15B894E4908A0E00C5A6 /* DewarpEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DewarpEngine.swift; sourceTree = "<group>"; };
@@ -70,7 +70,7 @@
 		5ECBAC534D98260A0C6F291A /* SpreadDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpreadDetectionTests.swift; sourceTree = "<group>"; };
 		621479F28F29F7E11524EB51 /* BookSpreadDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookSpreadDetector.swift; sourceTree = "<group>"; };
 		6E0714A977F011B66B4B6D83 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
-		768D857D1E14DBA56CD6E493 /* BookScan3Tests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BookScan3Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		768D857D1E14DBA56CD6E493 /* BookScan3Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookScan3Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9ECC8907FE97B7AA550CF93D /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
 		B3F86D87F0EDEE1B631EB655 /* BookSearchIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookSearchIndexer.swift; sourceTree = "<group>"; };
 		B562BBC734B0DE66E1FF8887 /* SpreadReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpreadReviewView.swift; sourceTree = "<group>"; };
@@ -79,7 +79,7 @@
 		D211D66A4C1B6570AD7E52EF /* PCTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PCTransferView.swift; sourceTree = "<group>"; };
 		D4DF55E0BD6FAAE674B056EE /* CameraScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraScannerView.swift; sourceTree = "<group>"; };
 		E5F814F619A81B2510DE108A /* PageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageDetailView.swift; sourceTree = "<group>"; };
-		E743CDF222C7F82755DD9867 /* BookScan3UITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BookScan3UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E743CDF222C7F82755DD9867 /* BookScan3UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookScan3UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EC2701D1AD29F1132072E5E5 /* SpreadGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpreadGeometry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -254,7 +254,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					2368254DFA9DD61BC1FFC94F = {
 						ProvisioningStyle = Automatic;
@@ -442,8 +442,13 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"CI_SILENCE_GL_DEPRECATION=1",
+				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -453,8 +458,10 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xcc -DCI_SILENCE_GL_DEPRECATION";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -500,6 +507,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -507,6 +515,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"DEBUG=1",
+					"CI_SILENCE_GL_DEPRECATION=1",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -518,8 +527,10 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xcc -DCI_SILENCE_GL_DEPRECATION";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;

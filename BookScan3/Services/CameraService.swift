@@ -98,7 +98,7 @@ final class CameraService: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     }
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         let time = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
-        // Analysis is intentionally throttled independently of the smooth camera preview.
+        // 부드러운 카메라 프리뷰 렌더링을 위해 프레임 분석 주기를 독립적으로 스로틀링(약 0.12초 간격)합니다.
         guard time - lastAnalysis > 0.12, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lastAnalysis = time
         autoreleasepool {

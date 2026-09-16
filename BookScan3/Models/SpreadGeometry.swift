@@ -1,8 +1,8 @@
 import Foundation
 import CoreGraphics
 
-/// Six points in upright source-image coordinates (origin at bottom left).
-/// Clockwise: outer TL, spine top, outer TR, outer BR, spine bottom, outer BL.
+/// 정방향 원본 이미지 좌표계(원점: 좌하단) 기준 6개 기준점.
+/// 시계 방향: 외곽 좌상단, 제본선 상단, 외곽 우상단, 외곽 우하단, 제본선 하단, 외곽 좌하단.
 struct SpreadGeometry: Codable, Equatable, Sendable {
     var points: [CGPoint]
     static let guide = SpreadGeometry(points: [
@@ -44,7 +44,7 @@ struct SpreadCaptureHint: Sendable {
     var aspect: CGFloat
     var observedAt: Date
     func agrees(with geometry: SpreadGeometry, aspect: CGFloat, now: Date = Date()) -> Bool {
-        // A changed field of view or stale observation cannot authorize an automatic crop.
+        // 화각 변경이나 오래된 관측 데이터는 자동 자르기를 승인할 수 없음 (2초 이내 및 화각 일치 검증)
         now.timeIntervalSince(observedAt) < 2 && abs(self.aspect - aspect) < 0.04
             && self.geometry.distance(to: geometry) < 0.08
     }
@@ -66,7 +66,7 @@ struct CaptureRecord: Identifiable, Codable, Equatable, Sendable {
 extension Quad {
     var isValid: Bool {
         guard points.count == 4, points.allSatisfy({ $0.x.isFinite && $0.y.isFinite }), area > 0.01 else { return false }
-        // Vision corner order is clockwise; reject concave, collapsed and crossed quads.
+        // Vision 모서리 순서는 시계 방향이며 오목하거나 축소/교차된 사각형은 거부합니다.
         for i in 0..<4 {
             let a = points[i], b = points[(i + 1) % 4], c = points[(i + 2) % 4]
             if (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x) >= -0.0001 { return false }
